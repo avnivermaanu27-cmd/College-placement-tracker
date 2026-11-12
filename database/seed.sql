@@ -2,12 +2,15 @@ USE college_placement_tracker;
 
 -- Development-only seed accounts use the password "password". Change it locally.
 INSERT INTO users (user_id, email, password_hash, role) VALUES
-  (1, 'admin@college.test', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin'),
-  (2, 'aarav@college.test', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'student'),
-  (3, 'diya@college.test', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'student'),
-  (4, 'kabir@college.test', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'student'),
-  (5, 'recruiter@techcorp.test', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'company')
-ON DUPLICATE KEY UPDATE email = VALUES(email);
+  (1, 'admin@college.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'admin'),
+  (2, 'aarav@college.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'student'),
+  (3, 'diya@college.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'student'),
+  (4, 'kabir@college.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'student'),
+  (5, 'recruiter@techcorp.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'company')
+ON DUPLICATE KEY UPDATE
+  email = VALUES(email),
+  password_hash = VALUES(password_hash),
+  role = VALUES(role);
 
 INSERT INTO admins (admin_id, user_id, name, email) VALUES
   (1, 1, 'Placement Administrator', 'admin@college.test')
