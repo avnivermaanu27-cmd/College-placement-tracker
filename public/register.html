@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register | College Placement Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="card login-card">
+      <p class="eyebrow">College Placement Tracker</p>
+      <h1>Create your account</h1>
+      <p class="muted">Register as a student to access your placement dashboard.</p>
+
+      <form id="register-form">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" maxlength="150" autocomplete="name" required>
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" maxlength="255" autocomplete="email" required>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+
+        <label for="branch">Branch</label>
+        <input id="branch" name="branch" type="text" maxlength="100" required>
+
+        <label for="cgpa">CGPA</label>
+        <input id="cgpa" name="cgpa" type="number" min="0" max="10" step="any" required>
+
+        <button id="submit-button" type="submit">Register</button>
+        <p id="register-message" class="message" role="status" aria-live="polite"></p>
+      </form>
+      <p class="muted">Already registered? <a href="/login.html">Sign in</a></p>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script>
+    const form = document.getElementById('register-form');
+    const message = document.getElementById('register-message');
+    const submitButton = document.getElementById('submit-button');
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      message.textContent = '';
+      submitButton.disabled = true;
+
+      try {
+        const response = await window.apiFetch('/api/students/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.elements.name.value.trim(),
+            email: form.elements.email.value.trim(),
+            password: form.elements.password.value,
+            branch: form.elements.branch.value.trim(),
+            cgpa: Number(form.elements.cgpa.value)
+          })
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Unable to register.');
+        }
+
+        if (!data.token || !data.user || data.user.role !== 'student') {
+          throw new Error('The server returned an invalid registration response.');
+        }
+
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.user.role);
+        window.location.assign('/student/dashboard.html');
+      } catch (error) {
+        message.textContent = error.message || 'Unable to connect. Please try again.';
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
