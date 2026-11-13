@@ -9,6 +9,7 @@ const studentRoutes = require('./routes/studentRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const driveRoutes = require('./routes/driveRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -20,6 +21,7 @@ app.use('/api/students', studentRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/drives', driveRoutes);
 app.use('/api/applications', applicationRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'College Placement Tracker API is running.' });
