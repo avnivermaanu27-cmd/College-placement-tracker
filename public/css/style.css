@@ -1,0 +1,125 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #172033;
+  background: #f3f6fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.page-shell {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+}
+
+.card {
+  width: min(100%, 440px);
+  padding: 36px;
+  border: 1px solid #e1e7f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgb(23 32 51 / 8%);
+}
+
+.login-card h1,
+.dashboard-card h1 {
+  margin: 0 0 10px;
+  font-size: 1.8rem;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #315dc7;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.muted {
+  margin: 0 0 28px;
+  color: #657187;
+  line-height: 1.5;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid #cbd4e2;
+  border-radius: 7px;
+  color: inherit;
+  font: inherit;
+}
+
+input:focus {
+  border-color: #315dc7;
+  outline: 3px solid rgb(49 93 199 / 15%);
+}
+
+button {
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 7px;
+  background: #315dc7;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+button:hover {
+  background: #244ba9;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.message {
+  min-height: 1.25em;
+  margin: 4px 0 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.dashboard-card {
+  text-align: center;
+}
+
+.dashboard-card .muted {
+  margin-bottom: 12px;
+}
+
+@media (max-width: 480px) {
+  .page-shell {
+    padding: 16px;
+  }
+
+  .card {
+    padding: 28px 22px;
+  }
+}
