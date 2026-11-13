@@ -5,16 +5,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Admin Dashboard | College Placement Tracker</title>
   <link rel="stylesheet" href="/css/style.css">
-  <script src="/js/api.js" defer></script>
+  <script>
+    if (localStorage.getItem('role') !== 'admin') {
+      window.location.replace('/login.html');
+    }
+  </script>
+  <script src="/js/api.js"></script>
 </head>
 <body>
-  <main class="page-shell">
-    <section class="card dashboard-card">
-      <p class="eyebrow">College Placement Tracker</p>
-      <h1>Admin Dashboard</h1>
-      <p class="muted">Your dashboard is coming soon.</p>
-      <button type="button" onclick="logout()">Log out</button>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">College Placement Tracker</p>
+        <h1>Admin Dashboard</h1>
+      </div>
+      <button class="button-secondary" type="button" onclick="logout()">Log out</button>
+    </header>
+
+    <nav class="admin-nav" aria-label="Admin pages">
+      <a href="/admin/dashboard.html" aria-current="page">Dashboard</a>
+      <a href="/admin/students.html">Students</a>
+      <a href="/admin/companies.html">Companies</a>
+      <a href="/admin/drives.html">Drives</a>
+      <a href="/admin/applications.html">Applications</a>
+    </nav>
+
+    <section>
+      <h2>Placement overview</h2>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="metric-grid">
+        <article class="metric-card"><h3>Total students</h3><p id="total-students">—</p></article>
+        <article class="metric-card"><h3>Placed students</h3><p id="placed-students">—</p></article>
+        <article class="metric-card"><h3>Unplaced students</h3><p id="unplaced-students">—</p></article>
+        <article class="metric-card"><h3>Placement percentage</h3><p id="placement-percentage">—</p></article>
+        <article class="metric-card"><h3>Companies</h3><p id="total-companies">—</p></article>
+        <article class="metric-card"><h3>Drives</h3><p id="total-drives">—</p></article>
+        <article class="metric-card"><h3>Applications</h3><p id="total-applications">—</p></article>
+      </div>
     </section>
   </main>
+
+  <script>
+    async function loadReport() {
+      const message = document.getElementById('page-message');
+      try {
+        const response = await apiFetch('/api/reports');
+        const report = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(report.message || 'Could not load the placement report.');
+        }
+
+        document.getElementById('total-students').textContent = report.totalStudents;
+        document.getElementById('placed-students').textContent = report.placedStudents;
+        document.getElementById('unplaced-students').textContent = report.unplacedStudents;
+        document.getElementById('placement-percentage').textContent =
+          `${Number(report.placementPercentage).toFixed(2)}%`;
+        document.getElementById('total-companies').textContent = report.totalCompanies;
+        document.getElementById('total-drives').textContent = report.totalDrives;
+        document.getElementById('total-applications').textContent = report.totalApplications;
+      } catch (error) {
+        message.textContent = error.message || 'Could not load the placement report.';
+      }
+    }
+
+    loadReport();
+  </script>
 </body>
 </html>

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Placement Drives | College Placement Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if (localStorage.getItem('role') !== 'admin') {
+      window.location.replace('/login.html');
+    }
+  </script>
+  <script src="/js/api.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div><p class="eyebrow">College Placement Tracker</p><h1>Placement Drives</h1></div>
+      <button class="button-secondary" type="button" onclick="logout()">Log out</button>
+    </header>
+    <nav class="admin-nav" aria-label="Admin pages">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/students.html">Students</a>
+      <a href="/admin/companies.html">Companies</a>
+      <a href="/admin/drives.html" aria-current="page">Drives</a>
+      <a href="/admin/applications.html">Applications</a>
+    </nav>
+
+    <section class="content-panel">
+      <h2>Create a drive</h2>
+      <form id="drive-form" class="form-grid">
+        <label for="company-id">Company</label>
+        <select id="company-id" name="companyId" required>
+          <option value="">Loading companies...</option>
+        </select>
+        <label for="drive-date">Drive date</label>
+        <input id="drive-date" name="driveDate" type="date" required>
+        <label for="min-cgpa">Minimum CGPA</label>
+        <input id="min-cgpa" name="minCgpa" type="number" min="0" max="10" step="0.01" required>
+        <label for="eligible-branches">Eligible branches</label>
+        <input id="eligible-branches" name="eligibleBranches" placeholder="Computer Science, Information Technology" required>
+        <p class="form-hint form-wide">Enter one or more branch names separated by commas.</p>
+        <div class="form-actions form-wide">
+          <button type="submit">Create drive</button>
+        </div>
+      </form>
+      <p id="form-message" class="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="content-panel">
+      <div class="section-heading">
+        <div><h2>Placement drives</h2><p class="muted">Current drives and their eligibility details.</p></div>
+        <button id="refresh-drives" class="button-secondary" type="button">Refresh</button>
+      </div>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>ID</th><th>Company</th><th>Date</th><th>Minimum CGPA</th><th>Eligible branches</th></tr>
+          </thead>
+          <tbody id="drives-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const driveForm = document.getElementById('drive-form');
+    const companySelect = document.getElementById('company-id');
+    const drivesTable = document.getElementById('drives-table');
+    const formMessage = document.getElementById('form-message');
+    const pageMessage = document.getElementById('page-message');
+
+    async function readResponse(response) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'The request could not be completed.');
+      }
+      return data;
+    }
+
+    function showMessage(element, text, isError) {
+      element.textContent = text;
+      element.className = isError ? 'message' : 'message success';
+    }
+
+    function addCell(row, value) {
+      const cell = document.createElement('td');
+      cell.textContent = value === null || value === undefined ? '' : String(value);
+      row.appendChild(cell);
+    }
+
+    async function loadCompanies() {
+      try {
+        const data = await readResponse(await apiFetch('/api/companies'));
+        companySelect.replaceChildren(new Option('Choose a company', ''));
+        for (const company of data.companies) {
+          companySelect.add(new Option(company.name, company.companyId));
+        }
+        companySelect.disabled = data.companies.length === 0;
+        if (data.companies.length === 0) {
+          showMessage(formMessage, 'Add a company before creating a drive.', true);
+        }
+      } catch (error) {
+        companySelect.replaceChildren(new Option('Could not load companies', ''));
+        companySelect.disabled = true;
+        showMessage(formMessage, error.message || 'Could not load companies.', true);
+      }
+    }
+
+    function formatBranches(value) {
+      const branches = typeof value === 'string' ? JSON.parse(value) : value;
+      return Array.isArray(branches) ? branches.join(', ') : '';
+    }
+
+    function formatDate(value) {
+      return new Intl.DateTimeFormat(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      }).format(new Date(value));
+    }
+
+    async function loadDrives() {
+      pageMessage.textContent = '';
+      try {
+        const data = await readResponse(await apiFetch('/api/drives'));
+        drivesTable.replaceChildren();
+        for (const drive of data.drives) {
+          const row = document.createElement('tr');
+          addCell(row, drive.driveId);
+          addCell(row, drive.companyName);
+          addCell(row, formatDate(drive.driveDate));
+          addCell(row, drive.minCgpa);
+          addCell(row, formatBranches(drive.eligibleBranches));
+          drivesTable.appendChild(row);
+        }
+      } catch (error) {
+        showMessage(pageMessage, error.message || 'Could not load drives.', true);
+      }
+    }
+
+    document.getElementById('refresh-drives').addEventListener('click', loadDrives);
+    driveForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const eligibleBranches = driveForm.elements.eligibleBranches.value
+        .split(',')
+        .map(branch => branch.trim())
+        .filter(Boolean);
+
+      try {
+        const result = await readResponse(await apiFetch('/api/drives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyId: Number(driveForm.elements.companyId.value),
+            driveDate: driveForm.elements.driveDate.value,
+            minCgpa: Number(driveForm.elements.minCgpa.value),
+            eligibleBranches
+          })
+        }));
+        showMessage(formMessage, result.message || 'Drive created successfully.', false);
+        driveForm.reset();
+        await loadDrives();
+      } catch (error) {
+        showMessage(formMessage, error.message || 'Could not create the drive.', true);
+      }
+    });
+
+    loadCompanies();
+    loadDrives();
+  </script>
+</body>
+</html>

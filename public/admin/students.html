@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Students | College Placement Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if (localStorage.getItem('role') !== 'admin') {
+      window.location.replace('/login.html');
+    }
+  </script>
+  <script src="/js/api.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div><p class="eyebrow">College Placement Tracker</p><h1>Students</h1></div>
+      <button class="button-secondary" type="button" onclick="logout()">Log out</button>
+    </header>
+    <nav class="admin-nav" aria-label="Admin pages">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/students.html" aria-current="page">Students</a>
+      <a href="/admin/companies.html">Companies</a>
+      <a href="/admin/drives.html">Drives</a>
+      <a href="/admin/applications.html">Applications</a>
+    </nav>
+
+    <section class="content-panel">
+      <div class="section-heading">
+        <div><h2>Student records</h2><p class="muted">Edit a profile or remove a student.</p></div>
+        <button id="refresh-students" class="button-secondary" type="button">Refresh</button>
+      </div>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>Email</th><th>Branch</th>
+              <th>CGPA</th><th>Placed</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="edit-dialog" class="admin-dialog">
+    <form id="edit-form">
+      <h2>Edit student</h2>
+      <label for="edit-name">Name</label>
+      <input id="edit-name" name="name" maxlength="150" required>
+      <label for="edit-branch">Branch</label>
+      <input id="edit-branch" name="branch" maxlength="100" required>
+      <label for="edit-cgpa">CGPA</label>
+      <input id="edit-cgpa" name="cgpa" type="number" min="0" max="10" step="0.01" required>
+      <label class="checkbox-label"><input name="isPlaced" type="checkbox"> Placed</label>
+      <p id="edit-message" class="message" role="status" aria-live="polite"></p>
+      <div class="form-actions">
+        <button id="cancel-edit" class="button-secondary" type="button">Cancel</button>
+        <button type="submit">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const tableBody = document.getElementById('students-table');
+    const pageMessage = document.getElementById('page-message');
+    const editDialog = document.getElementById('edit-dialog');
+    const editForm = document.getElementById('edit-form');
+    let editingStudentId = null;
+
+    async function readResponse(response) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'The request could not be completed.');
+      }
+      return data;
+    }
+
+    function showMessage(element, text, isError) {
+      element.textContent = text;
+      element.className = isError ? 'message' : 'message success';
+    }
+
+    function addCell(row, value) {
+      const cell = document.createElement('td');
+      cell.textContent = value === null || value === undefined ? '' : String(value);
+      row.appendChild(cell);
+    }
+
+    function openEdit(student) {
+      editingStudentId = student.studentId;
+      editForm.elements.name.value = student.name;
+      editForm.elements.branch.value = student.branch;
+      editForm.elements.cgpa.value = student.cgpa;
+      editForm.elements.isPlaced.checked = Boolean(student.isPlaced);
+      document.getElementById('edit-message').textContent = '';
+      editDialog.showModal();
+    }
+
+    async function loadStudents() {
+      pageMessage.textContent = '';
+      try {
+        const data = await readResponse(await apiFetch('/api/students'));
+        tableBody.replaceChildren();
+
+        for (const student of data.students) {
+          const row = document.createElement('tr');
+          addCell(row, student.studentId);
+          addCell(row, student.name);
+          addCell(row, student.email);
+          addCell(row, student.branch);
+          addCell(row, student.cgpa);
+          addCell(row, student.isPlaced ? 'Yes' : 'No');
+
+          const actions = document.createElement('td');
+          actions.className = 'table-actions';
+          const editButton = document.createElement('button');
+          editButton.className = 'button-secondary';
+          editButton.type = 'button';
+          editButton.textContent = 'Edit';
+          editButton.addEventListener('click', () => openEdit(student));
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'button-danger';
+          deleteButton.type = 'button';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', () => deleteStudent(student));
+          actions.append(editButton, deleteButton);
+          row.appendChild(actions);
+          tableBody.appendChild(row);
+        }
+      } catch (error) {
+        showMessage(pageMessage, error.message || 'Could not load students.', true);
+      }
+    }
+
+    async function deleteStudent(student) {
+      if (!window.confirm(`Delete ${student.name}? Their application records will also be removed.`)) {
+        return;
+      }
+      try {
+        const result = await readResponse(await apiFetch(`/api/students/${student.studentId}`, {
+          method: 'DELETE'
+        }));
+        showMessage(pageMessage, result.message || 'Student deleted.', false);
+        await loadStudents();
+      } catch (error) {
+        showMessage(pageMessage, error.message || 'Could not delete the student.', true);
+      }
+    }
+
+    document.getElementById('refresh-students').addEventListener('click', loadStudents);
+    document.getElementById('cancel-edit').addEventListener('click', () => editDialog.close());
+    editForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const editMessage = document.getElementById('edit-message');
+      try {
+        await readResponse(await apiFetch(`/api/students/${editingStudentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: editForm.elements.name.value.trim(),
+            branch: editForm.elements.branch.value.trim(),
+            cgpa: Number(editForm.elements.cgpa.value),
+            isPlaced: editForm.elements.isPlaced.checked
+          })
+        }));
+        editDialog.close();
+        showMessage(pageMessage, 'Student updated successfully.', false);
+        await loadStudents();
+      } catch (error) {
+        showMessage(editMessage, error.message || 'Could not update the student.', true);
+      }
+    });
+
+    loadStudents();
+  </script>
+</body>
+</html>

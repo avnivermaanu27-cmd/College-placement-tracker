@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Companies | College Placement Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if (localStorage.getItem('role') !== 'admin') {
+      window.location.replace('/login.html');
+    }
+  </script>
+  <script src="/js/api.js"></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div><p class="eyebrow">College Placement Tracker</p><h1>Companies</h1></div>
+      <button class="button-secondary" type="button" onclick="logout()">Log out</button>
+    </header>
+    <nav class="admin-nav" aria-label="Admin pages">
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/students.html">Students</a>
+      <a href="/admin/companies.html" aria-current="page">Companies</a>
+      <a href="/admin/drives.html">Drives</a>
+      <a href="/admin/applications.html">Applications</a>
+    </nav>
+
+    <section class="content-panel">
+      <h2 id="company-form-title">Add a company</h2>
+      <form id="company-form" class="form-grid">
+        <label for="company-name">Company name</label>
+        <input id="company-name" name="name" maxlength="150" required>
+        <label for="company-location">Location</label>
+        <input id="company-location" name="location" maxlength="150" required>
+        <label for="company-package">Package</label>
+        <input id="company-package" name="package" type="number" min="0" max="99999999.99" step="0.01" required>
+        <div class="form-actions form-wide">
+          <button id="company-submit" type="submit">Add company</button>
+          <button id="company-cancel" class="button-secondary" type="button" hidden>Cancel edit</button>
+        </div>
+      </form>
+      <p id="form-message" class="message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="content-panel">
+      <div class="section-heading">
+        <div><h2>Company records</h2><p class="muted">Manage company profiles.</p></div>
+        <button id="refresh-companies" class="button-secondary" type="button">Refresh</button>
+      </div>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>Name</th><th>Location</th><th>Package</th><th>Actions</th></tr></thead>
+          <tbody id="companies-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const companyForm = document.getElementById('company-form');
+    const companyTable = document.getElementById('companies-table');
+    const formMessage = document.getElementById('form-message');
+    const pageMessage = document.getElementById('page-message');
+
+    async function readResponse(response) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.message || 'The request could not be completed.');
+      }
+      return data;
+    }
+
+    function showMessage(element, text, isError) {
+      element.textContent = text;
+      element.className = isError ? 'message' : 'message success';
+    }
+
+    function addCell(row, value) {
+      const cell = document.createElement('td');
+      cell.textContent = value === null || value === undefined ? '' : String(value);
+      row.appendChild(cell);
+    }
+
+    function resetCompanyForm() {
+      companyForm.reset();
+      delete companyForm.dataset.companyId;
+      document.getElementById('company-form-title').textContent = 'Add a company';
+      document.getElementById('company-submit').textContent = 'Add company';
+      document.getElementById('company-cancel').hidden = true;
+      formMessage.textContent = '';
+    }
+
+    function editCompany(company) {
+      companyForm.dataset.companyId = company.companyId;
+      companyForm.elements.name.value = company.name;
+      companyForm.elements.location.value = company.location;
+      companyForm.elements.package.value = company.package;
+      document.getElementById('company-form-title').textContent = `Edit ${company.name}`;
+      document.getElementById('company-submit').textContent = 'Save changes';
+      document.getElementById('company-cancel').hidden = false;
+      formMessage.textContent = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function loadCompanies() {
+      pageMessage.textContent = '';
+      try {
+        const data = await readResponse(await apiFetch('/api/companies'));
+        companyTable.replaceChildren();
+        for (const company of data.companies) {
+          const row = document.createElement('tr');
+          addCell(row, company.companyId);
+          addCell(row, company.name);
+          addCell(row, company.location);
+          addCell(row, company.package);
+
+          const actions = document.createElement('td');
+          actions.className = 'table-actions';
+          const editButton = document.createElement('button');
+          editButton.className = 'button-secondary';
+          editButton.type = 'button';
+          editButton.textContent = 'Edit';
+          editButton.addEventListener('click', () => editCompany(company));
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'button-danger';
+          deleteButton.type = 'button';
+          deleteButton.textContent = 'Delete';
+          deleteButton.addEventListener('click', () => deleteCompany(company));
+          actions.append(editButton, deleteButton);
+          row.appendChild(actions);
+          companyTable.appendChild(row);
+        }
+      } catch (error) {
+        showMessage(pageMessage, error.message || 'Could not load companies.', true);
+      }
+    }
+
+    async function deleteCompany(company) {
+      if (!window.confirm(`Delete ${company.name}? Its drives and applications will also be removed.`)) {
+        return;
+      }
+      try {
+        const result = await readResponse(await apiFetch(`/api/companies/${company.companyId}`, {
+          method: 'DELETE'
+        }));
+        showMessage(pageMessage, result.message || 'Company deleted.', false);
+        if (companyForm.dataset.companyId === String(company.companyId)) {
+          resetCompanyForm();
+        }
+        await loadCompanies();
+      } catch (error) {
+        showMessage(pageMessage, error.message || 'Could not delete the company.', true);
+      }
+    }
+
+    document.getElementById('refresh-companies').addEventListener('click', loadCompanies);
+    document.getElementById('company-cancel').addEventListener('click', resetCompanyForm);
+    companyForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      const companyId = companyForm.dataset.companyId;
+      const payload = {
+        name: companyForm.elements.name.value.trim(),
+        location: companyForm.elements.location.value.trim(),
+        package: Number(companyForm.elements.package.value)
+      };
+      try {
+        const result = await readResponse(await apiFetch(
+          companyId ? `/api/companies/${companyId}` : '/api/companies',
+          {
+            method: companyId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }
+        ));
+        showMessage(formMessage, result.message || 'Company saved successfully.', false);
+        resetCompanyForm();
+        await loadCompanies();
+      } catch (error) {
+        showMessage(formMessage, error.message || 'Could not save the company.', true);
+      }
+    });
+
+    loadCompanies();
+  </script>
+</body>
+</html>
