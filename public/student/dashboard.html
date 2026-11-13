@@ -5,15 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Student Dashboard | College Placement Tracker</title>
   <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if (localStorage.getItem('role') !== 'student') {
+      window.location.replace('/login.html');
+    }
+  </script>
   <script src="/js/api.js" defer></script>
+  <script src="/student/student.js" defer></script>
 </head>
 <body>
-  <main class="page-shell">
-    <section class="card dashboard-card">
-      <p class="eyebrow">College Placement Tracker</p>
-      <h1>Student Dashboard</h1>
-      <p class="muted">Your dashboard is coming soon.</p>
-      <button type="button" onclick="logout()">Log out</button>
+  <main class="admin-shell" data-page="dashboard">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">College Placement Tracker</p>
+        <h1>Welcome, <span id="student-name">student</span></h1>
+      </div>
+      <button class="button-secondary" type="button" data-logout>Log out</button>
+    </header>
+
+    <nav class="admin-nav" aria-label="Student pages">
+      <a href="/student/dashboard.html" aria-current="page">Dashboard</a>
+      <a href="/student/profile.html">My profile</a>
+      <a href="/student/drives.html">Placement drives</a>
+      <a href="/student/applications.html">My applications</a>
+    </nav>
+
+    <section>
+      <h2>Your placement profile</h2>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="metric-grid">
+        <article class="metric-card"><h3>Branch</h3><p id="student-branch">—</p></article>
+        <article class="metric-card"><h3>CGPA</h3><p id="student-cgpa">—</p></article>
+        <article class="metric-card"><h3>Placement status</h3><p id="student-placed">—</p></article>
+      </div>
     </section>
   </main>
 </body>
