@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Applications | College Placement Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script>
+    if (localStorage.getItem('role') !== 'company') {
+      window.location.replace('/login.html');
+    }
+  </script>
+  <script src="/js/api.js" defer></script>
+  <script src="/company/company.js" defer></script>
+</head>
+<body>
+  <main class="admin-shell" data-page="applications">
+    <header class="admin-header">
+      <div><p class="eyebrow">College Placement Tracker</p><h1>Applications</h1></div>
+      <button class="button-secondary" type="button" data-logout>Log out</button>
+    </header>
+    <nav class="admin-nav" aria-label="Company pages">
+      <a href="/company/dashboard.html">Dashboard</a>
+      <a href="/company/drives.html">My drives</a>
+      <a href="/company/applications.html" aria-current="page">Applications</a>
+    </nav>
+
+    <section class="content-panel">
+      <div class="section-heading">
+        <div><h2>Applicants to your drives</h2><p class="muted">Update each application to Shortlisted, Selected, or Rejected.</p></div>
+        <button id="refresh-applications" class="button-secondary" type="button">Refresh</button>
+      </div>
+      <p id="page-message" class="message" role="status" aria-live="polite"></p>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Student</th><th>Branch</th><th>CGPA</th><th>Drive date</th><th>Status</th><th>Change status</th></tr>
+          </thead>
+          <tbody id="applications-table"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
