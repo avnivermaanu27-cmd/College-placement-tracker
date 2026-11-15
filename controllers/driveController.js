@@ -1,5 +1,11 @@
 const { pool } = require('../config/db');
-const { getObjectBody, getPositiveId, isValidCgpa, isValidDate } = require('../utils/validation');
+const {
+  getObjectBody,
+  getPositiveId,
+  isValidCgpa,
+  isValidDate,
+  isValidSkills
+} = require('../utils/validation');
 
 const driveFields = `
   d.drive_id AS driveId,
@@ -7,11 +13,12 @@ const driveFields = `
   c.name AS companyName,
   d.drive_date AS driveDate,
   d.min_cgpa AS minCgpa,
-  d.eligible_branches AS eligibleBranches
+  d.eligible_branches AS eligibleBranches,
+  d.skills
 `;
 
 function validateDriveFields(body, { creating = false, allowCompanyId = false } = {}) {
-  const allowedFields = new Set(['driveDate', 'minCgpa', 'eligibleBranches']);
+  const allowedFields = new Set(['driveDate', 'minCgpa', 'eligibleBranches', 'skills']);
   if (allowCompanyId) {
     allowedFields.add('companyId');
   }
@@ -30,6 +37,9 @@ function validateDriveFields(body, { creating = false, allowCompanyId = false } 
   }
   if (Object.hasOwn(body, 'minCgpa') && !isValidCgpa(body.minCgpa)) {
     return 'Minimum CGPA must be a number between 0 and 10.';
+  }
+  if (Object.hasOwn(body, 'skills') && !isValidSkills(body.skills)) {
+    return 'Skills must be a comma-separated string of 255 characters or fewer.';
   }
   if (Object.hasOwn(body, 'eligibleBranches')) {
     if (
@@ -131,11 +141,12 @@ async function createDrive(req, res) {
   }
 
   const branches = body.eligibleBranches.map(branch => branch.trim());
+  const skills = typeof body.skills === 'string' ? body.skills.trim() : '';
   const [result] = await pool.execute(
     `INSERT INTO placement_drives
-      (company_id, drive_date, min_cgpa, eligible_branches)
-     VALUES (?, ?, ?, ?)`,
-    [companyId, body.driveDate, body.minCgpa, JSON.stringify(branches)]
+      (company_id, drive_date, min_cgpa, eligible_branches, skills)
+     VALUES (?, ?, ?, ?, ?)`,
+    [companyId, body.driveDate, body.minCgpa, JSON.stringify(branches), skills]
   );
 
   return res.status(201).json({
@@ -145,7 +156,8 @@ async function createDrive(req, res) {
       companyId,
       driveDate: body.driveDate,
       minCgpa: body.minCgpa,
-      eligibleBranches: branches
+      eligibleBranches: branches,
+      skills
     }
   });
 }
@@ -201,6 +213,10 @@ async function updateDrive(req, res) {
   if (Object.hasOwn(body, 'eligibleBranches')) {
     updates.push('eligible_branches = ?');
     values.push(JSON.stringify(body.eligibleBranches.map(branch => branch.trim())));
+  }
+  if (Object.hasOwn(body, 'skills')) {
+    updates.push('skills = ?');
+    values.push(body.skills.trim());
   }
 
   values.push(driveId);

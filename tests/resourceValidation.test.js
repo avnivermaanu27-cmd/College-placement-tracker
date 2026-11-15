@@ -4,7 +4,8 @@ const {
   getObjectBody,
   getPositiveId,
   isValidCgpa,
-  isValidDate
+  isValidDate,
+  isValidSkills
 } = require('../utils/validation');
 
 test('getObjectBody accepts only JSON object-shaped values', () => {
@@ -34,4 +35,12 @@ test('isValidDate rejects impossible calendar dates', () => {
   assert.equal(isValidDate('2027-02-29'), false);
   assert.equal(isValidDate('2027-13-01'), false);
   assert.equal(isValidDate('15-01-2027'), false);
+});
+
+test('isValidSkills accepts strings up to 255 characters only', () => {
+  assert.equal(isValidSkills('javascript,sql,html'), true);
+  assert.equal(isValidSkills(''), true);
+  assert.equal(isValidSkills('x'.repeat(255)), true);
+  assert.equal(isValidSkills('x'.repeat(256)), false);
+  assert.equal(isValidSkills(['javascript', 'sql']), false);
 });

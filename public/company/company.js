@@ -90,6 +90,7 @@
         addCell(row, formatDate(drive.driveDate));
         addCell(row, drive.minCgpa);
         addCell(row, formatBranches(drive.eligibleBranches));
+        addCell(row, drive.skills);
         table.appendChild(row);
       }
       if (drives.length === 0) {

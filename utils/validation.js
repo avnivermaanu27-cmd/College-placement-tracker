@@ -20,6 +20,10 @@ function isValidCgpa(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 10;
 }
 
+function isValidSkills(value) {
+  return typeof value === 'string' && value.length <= 255;
+}
+
 function isValidDate(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return false;
@@ -32,4 +36,4 @@ function isValidDate(value) {
     date.getUTCDate() === day;
 }
 
-module.exports = { getObjectBody, getPositiveId, isValidCgpa, isValidDate };
+module.exports = { getObjectBody, getPositiveId, isValidCgpa, isValidDate, isValidSkills };

@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { createAuthToken } = require('../config/jwt');
+const { isValidSkills } = require('../utils/validation');
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,6 +22,7 @@ async function createStudentAccount(req, res) {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const email = getEmail(body.email);
   const branch = typeof body.branch === 'string' ? body.branch.trim() : '';
+  const skills = body.skills === undefined ? '' : body.skills;
   const password = body.password;
   const cgpa = body.cgpa;
 
@@ -34,6 +36,10 @@ async function createStudentAccount(req, res) {
 
   if (!branch || branch.length > 100) {
     return res.status(400).json({ message: 'Branch is required and must be 100 characters or fewer.' });
+  }
+
+  if (!isValidSkills(skills)) {
+    return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
   }
 
   if (
@@ -63,8 +69,8 @@ async function createStudentAccount(req, res) {
     );
 
     const [studentResult] = await connection.execute(
-      'INSERT INTO students (user_id, name, email, branch, cgpa) VALUES (?, ?, ?, ?, ?)',
-      [userResult.insertId, name, email, branch, cgpa]
+      'INSERT INTO students (user_id, name, email, branch, cgpa, skills) VALUES (?, ?, ?, ?, ?, ?)',
+      [userResult.insertId, name, email, branch, cgpa, skills.trim()]
     );
 
     const user = {
@@ -87,7 +93,8 @@ async function createStudentAccount(req, res) {
         studentId: studentResult.insertId,
         name,
         branch,
-        cgpa
+        cgpa,
+        skills: skills.trim()
       }
     });
   } catch (error) {

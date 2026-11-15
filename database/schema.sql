@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS students (
   email VARCHAR(255) NOT NULL,
   branch VARCHAR(100) NOT NULL,
   cgpa DECIMAL(4, 2) NOT NULL,
+  skills VARCHAR(255) NOT NULL DEFAULT '',
   is_placed BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (student_id),
   UNIQUE KEY uq_students_email (email),
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS placement_drives (
   drive_date DATE NOT NULL,
   min_cgpa DECIMAL(4, 2) NOT NULL,
   eligible_branches JSON NOT NULL,
+  skills VARCHAR(255) NOT NULL DEFAULT '',
   PRIMARY KEY (drive_id),
   CONSTRAINT chk_drives_min_cgpa CHECK (min_cgpa >= 0 AND min_cgpa <= 10),
   CONSTRAINT fk_drives_company

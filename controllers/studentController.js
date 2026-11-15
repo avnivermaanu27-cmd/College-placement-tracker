@@ -1,5 +1,5 @@
 const { pool } = require('../config/db');
-const { getObjectBody, getPositiveId, isValidCgpa } = require('../utils/validation');
+const { getObjectBody, getPositiveId, isValidCgpa, isValidSkills } = require('../utils/validation');
 
 const studentFields = `
   student_id AS studentId,
@@ -7,6 +7,7 @@ const studentFields = `
   email,
   branch,
   cgpa,
+  skills,
   is_placed AS isPlaced
 `;
 
@@ -57,9 +58,10 @@ async function createStudent(req, res) {
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   const branch = typeof body.branch === 'string' ? body.branch.trim() : '';
+  const skills = body.skills === undefined ? '' : body.skills;
 
-  if (Object.keys(body).some(field => !['name', 'email', 'branch', 'cgpa'].includes(field))) {
-    return res.status(400).json({ message: 'Only name, email, branch, and CGPA can be provided.' });
+  if (Object.keys(body).some(field => !['name', 'email', 'branch', 'cgpa', 'skills'].includes(field))) {
+    return res.status(400).json({ message: 'Only name, email, branch, CGPA, and skills can be provided.' });
   }
   if (!name || name.length > 150) {
     return res.status(400).json({ message: 'Name is required and must be 150 characters or fewer.' });
@@ -73,11 +75,14 @@ async function createStudent(req, res) {
   if (!isValidCgpa(body.cgpa)) {
     return res.status(400).json({ message: 'CGPA must be a number between 0 and 10.' });
   }
+  if (!isValidSkills(skills)) {
+    return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
+  }
 
   try {
     const [result] = await pool.execute(
-      'INSERT INTO students (name, email, branch, cgpa) VALUES (?, ?, ?, ?)',
-      [name, email, branch, body.cgpa]
+      'INSERT INTO students (name, email, branch, cgpa, skills) VALUES (?, ?, ?, ?, ?)',
+      [name, email, branch, body.cgpa, skills.trim()]
     );
 
     return res.status(201).json({
@@ -88,6 +93,7 @@ async function createStudent(req, res) {
         email,
         branch,
         cgpa: body.cgpa,
+        skills: skills.trim(),
         isPlaced: false
       }
     });
@@ -110,9 +116,9 @@ async function updateStudent(req, res) {
     return res.status(400).json({ message: 'Provide at least one student field to update.' });
   }
 
-  const allowedFields = new Set(['name', 'branch', 'cgpa', 'isPlaced']);
+  const allowedFields = new Set(['name', 'branch', 'cgpa', 'skills', 'isPlaced']);
   if (Object.keys(body).some(field => !allowedFields.has(field))) {
-    return res.status(400).json({ message: 'Only name, branch, CGPA, and placed status can be updated.' });
+    return res.status(400).json({ message: 'Only name, branch, CGPA, skills, and placed status can be updated.' });
   }
 
   const updates = [];
@@ -142,6 +148,14 @@ async function updateStudent(req, res) {
     }
     updates.push('cgpa = ?');
     values.push(body.cgpa);
+  }
+
+  if (Object.hasOwn(body, 'skills')) {
+    if (!isValidSkills(body.skills)) {
+      return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
+    }
+    updates.push('skills = ?');
+    values.push(body.skills.trim());
   }
 
   if (Object.hasOwn(body, 'isPlaced')) {
@@ -182,8 +196,8 @@ async function updateMyStudentProfile(req, res) {
     return res.status(400).json({ message: 'Provide at least one student field to update.' });
   }
 
-  if (Object.keys(body).some(field => !['name', 'branch', 'cgpa'].includes(field))) {
-    return res.status(400).json({ message: 'Students can update only their name, branch, and CGPA.' });
+  if (Object.keys(body).some(field => !['name', 'branch', 'cgpa', 'skills'].includes(field))) {
+    return res.status(400).json({ message: 'Students can update only their name, branch, CGPA, and skills.' });
   }
 
   const [students] = await pool.execute(

@@ -37,7 +37,7 @@
           <thead>
             <tr>
               <th>ID</th><th>Name</th><th>Email</th><th>Branch</th>
-              <th>CGPA</th><th>Placed</th><th>Actions</th>
+              <th>CGPA</th><th>Skills</th><th>Placed</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="students-table"></tbody>
@@ -55,6 +55,8 @@
       <input id="edit-branch" name="branch" maxlength="100" required>
       <label for="edit-cgpa">CGPA</label>
       <input id="edit-cgpa" name="cgpa" type="number" min="0" max="10" step="0.01" required>
+      <label for="edit-skills">Skills</label>
+      <input id="edit-skills" name="skills" maxlength="255" placeholder="javascript, sql, html">
       <label class="checkbox-label"><input name="isPlaced" type="checkbox"> Placed</label>
       <p id="edit-message" class="message" role="status" aria-live="polite"></p>
       <div class="form-actions">
@@ -95,6 +97,7 @@
       editForm.elements.name.value = student.name;
       editForm.elements.branch.value = student.branch;
       editForm.elements.cgpa.value = student.cgpa;
+      editForm.elements.skills.value = student.skills || '';
       editForm.elements.isPlaced.checked = Boolean(student.isPlaced);
       document.getElementById('edit-message').textContent = '';
       editDialog.showModal();
@@ -113,6 +116,7 @@
           addCell(row, student.email);
           addCell(row, student.branch);
           addCell(row, student.cgpa);
+          addCell(row, student.skills);
           addCell(row, student.isPlaced ? 'Yes' : 'No');
 
           const actions = document.createElement('td');
@@ -164,6 +168,7 @@
             name: editForm.elements.name.value.trim(),
             branch: editForm.elements.branch.value.trim(),
             cgpa: Number(editForm.elements.cgpa.value),
+            skills: editForm.elements.skills.value.trim(),
             isPlaced: editForm.elements.isPlaced.checked
           })
         }));

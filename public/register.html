@@ -26,6 +26,10 @@
         <label for="branch">Branch</label>
         <input id="branch" name="branch" type="text" maxlength="100" required>
 
+        <label for="skills">Skills</label>
+        <input id="skills" name="skills" type="text" maxlength="255" placeholder="javascript, sql, html">
+        <p class="form-hint">Enter skills separated by commas.</p>
+
         <label for="cgpa">CGPA</label>
         <input id="cgpa" name="cgpa" type="number" min="0" max="10" step="any" required>
 
@@ -56,7 +60,8 @@
             email: form.elements.email.value.trim(),
             password: form.elements.password.value,
             branch: form.elements.branch.value.trim(),
-            cgpa: Number(form.elements.cgpa.value)
+            cgpa: Number(form.elements.cgpa.value),
+            skills: form.elements.skills.value.trim()
           })
         });
         const data = await response.json().catch(() => ({}));

@@ -40,6 +40,9 @@
         <label for="eligible-branches">Eligible branches</label>
         <input id="eligible-branches" name="eligibleBranches" placeholder="Computer Science, Information Technology" required>
         <p class="form-hint form-wide">Enter one or more branch names separated by commas.</p>
+        <label for="drive-skills">Skills</label>
+        <input id="drive-skills" name="skills" maxlength="255" placeholder="javascript, sql, html">
+        <p class="form-hint form-wide">Enter skills separated by commas.</p>
         <div class="form-actions form-wide">
           <button type="submit">Create drive</button>
         </div>
@@ -56,7 +59,7 @@
       <div class="table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th>ID</th><th>Company</th><th>Date</th><th>Minimum CGPA</th><th>Eligible branches</th></tr>
+            <tr><th>ID</th><th>Company</th><th>Date</th><th>Minimum CGPA</th><th>Eligible branches</th><th>Skills</th></tr>
           </thead>
           <tbody id="drives-table"></tbody>
         </table>
@@ -133,6 +136,7 @@
           addCell(row, formatDate(drive.driveDate));
           addCell(row, drive.minCgpa);
           addCell(row, formatBranches(drive.eligibleBranches));
+          addCell(row, drive.skills);
           drivesTable.appendChild(row);
         }
       } catch (error) {
@@ -156,7 +160,8 @@
             companyId: Number(driveForm.elements.companyId.value),
             driveDate: driveForm.elements.driveDate.value,
             minCgpa: Number(driveForm.elements.minCgpa.value),
-            eligibleBranches
+            eligibleBranches,
+            skills: driveForm.elements.skills.value.trim()
           })
         }));
         showMessage(formMessage, result.message || 'Drive created successfully.', false);

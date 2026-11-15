@@ -75,6 +75,7 @@
       form.elements.name.value = student.name || '';
       form.elements.email.value = student.email || '';
       form.elements.branch.value = student.branch || '';
+      form.elements.skills.value = student.skills || '';
       form.elements.cgpa.value = student.cgpa;
     } catch (error) {
       showMessage(error.message || 'Could not load your profile.', true);
@@ -93,11 +94,13 @@
           body: JSON.stringify({
             name: form.elements.name.value.trim(),
             branch: form.elements.branch.value.trim(),
-            cgpa: Number(form.elements.cgpa.value)
+            cgpa: Number(form.elements.cgpa.value),
+            skills: form.elements.skills.value.trim()
           })
         }));
         form.elements.name.value = result.student.name;
         form.elements.branch.value = result.student.branch;
+        form.elements.skills.value = result.student.skills || '';
         form.elements.cgpa.value = result.student.cgpa;
         showMessage(result.message || 'Profile updated successfully.', false);
       } catch (error) {
@@ -125,6 +128,7 @@
         addCell(row, formatDate(drive.driveDate));
         addCell(row, drive.minCgpa);
         addCell(row, branches.join(', '));
+        addCell(row, drive.skills);
         addCell(row, isEligible ? 'Looks eligible' : 'Not eligible');
 
         const actionCell = document.createElement('td');
