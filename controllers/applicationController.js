@@ -1,6 +1,13 @@
 const { pool } = require('../config/db');
 const { getObjectBody, getPositiveId } = require('../utils/validation');
 
+const allowedStatusTransitions = {
+  Applied: ['Shortlisted', 'Rejected'],
+  Shortlisted: ['Selected', 'Rejected'],
+  Selected: [],
+  Rejected: []
+};
+
 const applicationFields = `
   a.application_id AS applicationId,
   a.student_id AS studentId,
@@ -65,11 +72,11 @@ async function createApplication(req, res) {
 
   const drive = drives[0];
   if (Number(student.cgpa) < Number(drive.min_cgpa)) {
-    return res.status(400).json({ message: 'Your CGPA is below the minimum required for this drive.' });
+    return res.status(422).json({ message: 'Your CGPA is below the minimum required for this drive.' });
   }
   const eligibleBranches = getEligibleBranches(drive.eligible_branches);
   if (!eligibleBranches.includes(student.branch)) {
-    return res.status(400).json({ message: 'Your branch is not eligible for this drive.' });
+    return res.status(422).json({ message: 'Your branch is not eligible for this drive.' });
   }
 
   try {
@@ -128,7 +135,7 @@ async function updateApplication(req, res) {
   }
 
   const body = getObjectBody(req.body);
-  const statuses = new Set(['Shortlisted', 'Selected', 'Rejected']);
+  const statuses = new Set(Object.keys(allowedStatusTransitions));
   if (
     !body ||
     Object.keys(body).length !== 1 ||
@@ -155,13 +162,13 @@ async function updateApplication(req, res) {
     transactionStarted = true;
 
     const [applications] = await connection.execute(
-      `SELECT a.application_id, a.student_id
+      `SELECT a.application_id, a.student_id, a.status, d.company_id AS companyId
        FROM applications a
        JOIN placement_drives d ON d.drive_id = a.drive_id
-       WHERE a.application_id = ?${isAdmin ? '' : ' AND d.company_id = ?'}
+       WHERE a.application_id = ?
        LIMIT 1
        FOR UPDATE`,
-      isAdmin ? [applicationId] : [applicationId, companyId]
+      [applicationId]
     );
     if (applications.length === 0) {
       await connection.rollback();
@@ -170,6 +177,21 @@ async function updateApplication(req, res) {
     }
 
     const application = applications[0];
+    if (!isAdmin && Number(application.companyId) !== Number(companyId)) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({ message: 'You can only update applications for your own drives.' });
+    }
+
+    const allowedStatuses = allowedStatusTransitions[application.status] || [];
+    if (!allowedStatuses.includes(body.status)) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(422).json({
+        message: `Application status cannot change from ${application.status} to ${body.status}.`
+      });
+    }
+
     await connection.execute(
       'UPDATE applications SET status = ? WHERE application_id = ?',
       [body.status, applicationId]
