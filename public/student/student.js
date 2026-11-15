@@ -188,6 +188,40 @@
     }
   }
 
+  async function loadRecommendations() {
+    showMessage('', false);
+    const table = document.getElementById('recommendations-table');
+    try {
+      const student = await loadProfile();
+      const data = await readResponse(
+        await window.apiFetch(`/api/recommendations/${student.studentId}`)
+      );
+      table.replaceChildren();
+      for (const recommendation of data.recommendations) {
+        const row = document.createElement('tr');
+        addCell(row, recommendation.rank);
+        addCell(row, recommendation.companyName);
+        addCell(row, `${Number(recommendation.score).toFixed(1)}%`);
+        addCell(row, recommendation.explanation);
+
+        const actionCell = document.createElement('td');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = 'Apply';
+        button.setAttribute('aria-label', `Apply to ${recommendation.companyName}`);
+        button.addEventListener('click', () => applyToDrive(recommendation.driveId, button));
+        actionCell.appendChild(button);
+        row.appendChild(actionCell);
+        table.appendChild(row);
+      }
+      if (data.recommendations.length === 0) {
+        showMessage('There are no eligible recommended drives right now.', false);
+      }
+    } catch (error) {
+      showMessage(error.message || 'Could not load recommended drives.', true);
+    }
+  }
+
   if (page.dataset.page === 'dashboard') {
     loadDashboard();
   } else if (page.dataset.page === 'profile') {
@@ -198,5 +232,8 @@
   } else if (page.dataset.page === 'applications') {
     document.getElementById('refresh-applications').addEventListener('click', loadApplications);
     loadApplications();
+  } else if (page.dataset.page === 'recommendations') {
+    document.getElementById('refresh-recommendations').addEventListener('click', loadRecommendations);
+    loadRecommendations();
   }
 })();
