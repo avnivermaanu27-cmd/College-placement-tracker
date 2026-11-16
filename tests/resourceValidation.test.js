@@ -37,10 +37,11 @@ test('isValidDate rejects impossible calendar dates', () => {
   assert.equal(isValidDate('15-01-2027'), false);
 });
 
-test('isValidSkills accepts strings up to 255 characters only', () => {
-  assert.equal(isValidSkills('javascript,sql,html'), true);
-  assert.equal(isValidSkills(''), true);
+test('isValidSkills accepts safe non-empty text up to 255 characters', () => {
+  assert.equal(isValidSkills('javascript'), true);
+  assert.equal(isValidSkills(''), false);
   assert.equal(isValidSkills('x'.repeat(255)), true);
   assert.equal(isValidSkills('x'.repeat(256)), false);
+  assert.equal(isValidSkills('javascript,sql'), false);
   assert.equal(isValidSkills(['javascript', 'sql']), false);
 });

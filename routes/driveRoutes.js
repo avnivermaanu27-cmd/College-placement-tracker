@@ -11,8 +11,18 @@ const {
 
 const router = express.Router();
 
-router.get('/', asyncHandler(listDrives));
-router.get('/:id', asyncHandler(getDrive));
+router.get(
+  '/',
+  authenticateToken,
+  authorizeRoles('admin', 'student', 'company'),
+  asyncHandler(listDrives)
+);
+router.get(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('admin', 'student', 'company'),
+  asyncHandler(getDrive)
+);
 router.post(
   '/',
   authenticateToken,

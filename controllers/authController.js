@@ -1,7 +1,12 @@
 const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { createAuthToken } = require('../config/jwt');
-const { isValidSkills } = require('../utils/validation');
+const { isValidSafeText, isValidSkills } = require('../utils/validation');
+const {
+  clearLoginFailures,
+  isLoginLocked,
+  recordLoginFailure
+} = require('../middleware/loginAttemptLimiter');
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -26,8 +31,8 @@ async function createStudentAccount(req, res) {
   const password = body.password;
   const cgpa = body.cgpa;
 
-  if (!name || name.length > 150) {
-    return res.status(400).json({ message: 'Name is required and must be 150 characters or fewer.' });
+  if (!isValidSafeText(name)) {
+    return res.status(400).json({ message: 'Name must be valid text between 1 and 50 characters.' });
   }
 
   if (!emailPattern.test(email) || email.length > 255) {
@@ -38,8 +43,8 @@ async function createStudentAccount(req, res) {
     return res.status(400).json({ message: 'Branch is required and must be 100 characters or fewer.' });
   }
 
-  if (!isValidSkills(skills)) {
-    return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
+  if (body.skills !== undefined && !isValidSkills(skills)) {
+    return res.status(400).json({ message: 'Skills must be valid text between 1 and 255 characters.' });
   }
 
   if (
@@ -121,6 +126,11 @@ function login(req, res, next) {
 }
 
 async function authenticateUser(req, res) {
+  const loginKey = req.ip || req.socket?.remoteAddress || 'unknown';
+  if (isLoginLocked(loginKey)) {
+    return res.status(429).json({ message: 'Too many failed login attempts. Try again later.' });
+  }
+
   const body = getRequestBody(req.body);
   const email = getEmail(body.email);
   const password = body.password;
@@ -135,9 +145,13 @@ async function authenticateUser(req, res) {
   );
 
   if (users.length === 0 || !(await bcrypt.compare(password, users[0].password_hash))) {
+    if (recordLoginFailure(loginKey)) {
+      return res.status(429).json({ message: 'Too many failed login attempts. Try again later.' });
+    }
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
 
+  clearLoginFailures(loginKey);
   const user = users[0];
   return res.json({
     message: 'Login successful.',

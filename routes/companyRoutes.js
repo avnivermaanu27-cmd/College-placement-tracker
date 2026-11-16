@@ -11,8 +11,18 @@ const {
 
 const router = express.Router();
 
-router.get('/', asyncHandler(listCompanies));
-router.get('/:id', asyncHandler(getCompany));
+router.get(
+  '/',
+  authenticateToken,
+  authorizeRoles('admin', 'student', 'company'),
+  asyncHandler(listCompanies)
+);
+router.get(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('admin', 'student', 'company'),
+  asyncHandler(getCompany)
+);
 router.post('/', authenticateToken, authorizeRoles('admin'), asyncHandler(createCompany));
 router.put(
   '/:id',

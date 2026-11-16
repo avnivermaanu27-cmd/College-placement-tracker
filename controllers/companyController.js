@@ -1,5 +1,5 @@
 const { pool } = require('../config/db');
-const { getObjectBody, getPositiveId } = require('../utils/validation');
+const { getObjectBody, getPositiveId, isValidSafeText } = require('../utils/validation');
 
 const companyFields = `
   company_id AS companyId,
@@ -48,12 +48,12 @@ function validateCompanyFields(body, { creating = false, allowUserId = false } =
     return 'Provide at least one company field.';
   }
   if (Object.hasOwn(body, 'name') &&
-      (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 150)) {
-    return 'Company name must be between 1 and 150 characters.';
+      !isValidSafeText(body.name)) {
+    return 'Company name must be valid text between 1 and 50 characters.';
   }
   if (Object.hasOwn(body, 'location') &&
-      (typeof body.location !== 'string' || !body.location.trim() || body.location.trim().length > 150)) {
-    return 'Location must be between 1 and 150 characters.';
+      !isValidSafeText(body.location)) {
+    return 'Location must be valid text between 1 and 50 characters.';
   }
   if (Object.hasOwn(body, 'package') &&
       (typeof body.package !== 'number' || !Number.isFinite(body.package) ||

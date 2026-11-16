@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const { connectDatabase } = require('./config/db');
 const { validateJwtSecret } = require('./config/jwt');
+const securityHeaders = require('./middleware/securityHeaders');
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const companyRoutes = require('./routes/companyRoutes');
@@ -17,7 +18,8 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(securityHeaders);
+app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', authRoutes);
 app.use('/api/students', studentRoutes);
@@ -27,7 +29,8 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 
-app.get('/api/health', (req, res) => {
+const { authenticateToken, authorizeRoles } = require('./middleware/authMiddleware');
+app.get('/api/health', authenticateToken, authorizeRoles('admin', 'student', 'company'), (req, res) => {
   res.json({ status: 'ok', message: 'College Placement Tracker API is running.' });
 });
 
@@ -59,4 +62,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;

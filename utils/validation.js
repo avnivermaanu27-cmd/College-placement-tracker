@@ -20,8 +20,15 @@ function isValidCgpa(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 10;
 }
 
+function isValidSafeText(value, maxLength = 50) {
+  return typeof value === 'string' &&
+    value.trim().length > 0 &&
+    value.length <= maxLength &&
+    !/[<>'"`;\\,\u0000-\u001f\u007f-\u009f]|--|\/\*/.test(value);
+}
+
 function isValidSkills(value) {
-  return typeof value === 'string' && value.length <= 255;
+  return isValidSafeText(value, 255);
 }
 
 function isValidDate(value) {
@@ -36,4 +43,11 @@ function isValidDate(value) {
     date.getUTCDate() === day;
 }
 
-module.exports = { getObjectBody, getPositiveId, isValidCgpa, isValidDate, isValidSkills };
+module.exports = {
+  getObjectBody,
+  getPositiveId,
+  isValidCgpa,
+  isValidDate,
+  isValidSafeText,
+  isValidSkills
+};

@@ -39,7 +39,7 @@ function validateDriveFields(body, { creating = false, allowCompanyId = false } 
     return 'Minimum CGPA must be a number between 0 and 10.';
   }
   if (Object.hasOwn(body, 'skills') && !isValidSkills(body.skills)) {
-    return 'Skills must be a comma-separated string of 255 characters or fewer.';
+    return 'Skills must be valid text between 1 and 255 characters.';
   }
   if (Object.hasOwn(body, 'eligibleBranches')) {
     if (

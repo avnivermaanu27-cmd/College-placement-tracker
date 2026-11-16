@@ -10,7 +10,12 @@ const router = express.Router();
 
 router.post('/students/register', registerStudent);
 router.post('/login', login);
-router.get('/auth/me', authenticateToken, getCurrentUser);
+router.get(
+  '/auth/me',
+  authenticateToken,
+  authorizeRoles('admin', 'student', 'company'),
+  getCurrentUser
+);
 router.get(
   '/auth/admin-check',
   authenticateToken,

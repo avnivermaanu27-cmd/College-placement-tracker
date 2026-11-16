@@ -1,5 +1,11 @@
 const { pool } = require('../config/db');
-const { getObjectBody, getPositiveId, isValidCgpa, isValidSkills } = require('../utils/validation');
+const {
+  getObjectBody,
+  getPositiveId,
+  isValidCgpa,
+  isValidSafeText,
+  isValidSkills
+} = require('../utils/validation');
 
 const studentFields = `
   student_id AS studentId,
@@ -63,8 +69,8 @@ async function createStudent(req, res) {
   if (Object.keys(body).some(field => !['name', 'email', 'branch', 'cgpa', 'skills'].includes(field))) {
     return res.status(400).json({ message: 'Only name, email, branch, CGPA, and skills can be provided.' });
   }
-  if (!name || name.length > 150) {
-    return res.status(400).json({ message: 'Name is required and must be 150 characters or fewer.' });
+  if (!isValidSafeText(name)) {
+    return res.status(400).json({ message: 'Name must be valid text between 1 and 50 characters.' });
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255) {
     return res.status(400).json({ message: 'A valid email address is required.' });
@@ -75,8 +81,8 @@ async function createStudent(req, res) {
   if (!isValidCgpa(body.cgpa)) {
     return res.status(400).json({ message: 'CGPA must be a number between 0 and 10.' });
   }
-  if (!isValidSkills(skills)) {
-    return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
+  if (body.skills !== undefined && !isValidSkills(skills)) {
+    return res.status(400).json({ message: 'Skills must be valid text between 1 and 255 characters.' });
   }
 
   try {
@@ -126,8 +132,8 @@ async function updateStudent(req, res) {
 
   if (Object.hasOwn(body, 'name')) {
     const name = typeof body.name === 'string' ? body.name.trim() : '';
-    if (!name || name.length > 150) {
-      return res.status(400).json({ message: 'Name must be between 1 and 150 characters.' });
+    if (!isValidSafeText(name)) {
+      return res.status(400).json({ message: 'Name must be valid text between 1 and 50 characters.' });
     }
     updates.push('name = ?');
     values.push(name);
@@ -152,7 +158,7 @@ async function updateStudent(req, res) {
 
   if (Object.hasOwn(body, 'skills')) {
     if (!isValidSkills(body.skills)) {
-      return res.status(400).json({ message: 'Skills must be a comma-separated string of 255 characters or fewer.' });
+      return res.status(400).json({ message: 'Skills must be valid text between 1 and 255 characters.' });
     }
     updates.push('skills = ?');
     values.push(body.skills.trim());
