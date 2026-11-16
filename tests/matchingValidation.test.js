@@ -1,6 +1,44 @@
 const { after, test } = require('node:test');
 const assert = require('node:assert/strict');
-const { matchScore } = require('../utils/matching');
+const { isEligible, matchScore } = require('../utils/matching');
+const { isValidCgpa } = require('../utils/validation');
+
+test('CGPA validation rejects values below zero', () => {
+  assert.equal(isValidCgpa(-1), false);
+});
+
+test('CGPA validation rejects values above ten', () => {
+  assert.equal(isValidCgpa(11), false);
+});
+
+test('CGPA validation rejects NaN', () => {
+  assert.equal(isValidCgpa(NaN), false);
+});
+
+test('CGPA validation rejects infinite values', () => {
+  assert.equal(isValidCgpa(Infinity), false);
+});
+
+test('eligibility includes a student exactly at the minimum CGPA', () => {
+  assert.equal(isEligible(
+    { cgpa: 8, branch: 'Computer Science' },
+    { minCgpa: 8, eligibleBranches: ['Computer Science'] }
+  ), true);
+});
+
+test('eligibility rejects non-finite CGPA values', () => {
+  assert.equal(isEligible(
+    { cgpa: NaN, branch: 'Computer Science' },
+    { minCgpa: 8, eligibleBranches: ['Computer Science'] }
+  ), false);
+});
+
+test('matching score supports whitespace-padded, case-insensitive ALL branches', () => {
+  assert.equal(matchScore(
+    { cgpa: 8, branch: 'Electronics', skills: '' },
+    { minCgpa: 7, eligibleBranches: [' all '], skills: '' }
+  ), 67);
+});
 
 const cases = [
   {

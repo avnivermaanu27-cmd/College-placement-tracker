@@ -80,13 +80,33 @@ async function ensureCompanyExists(companyId, res) {
 }
 
 async function listDrives(req, res) {
-  const [drives] = await pool.execute(
-    `SELECT ${driveFields}
+  let companyId = null;
+  if (req.user.role === 'company') {
+    companyId = await getCompanyForUser(req.user.userId);
+    if (!companyId) {
+      return res.status(403).json({ message: 'This company account is not linked to a company profile.' });
+    }
+  }
+
+  let query = `SELECT ${driveFields}
      FROM placement_drives d
-     JOIN companies c ON c.company_id = d.company_id
-     ORDER BY d.drive_date, d.drive_id`
+     JOIN companies c ON c.company_id = d.company_id`;
+  const values = [];
+  if (companyId !== null) {
+    query += ' WHERE d.company_id = ?';
+    values.push(companyId);
+  }
+  query += ' ORDER BY d.drive_date, d.drive_id';
+
+  const [drives] = await pool.execute(
+    query,
+    values
   );
-  return res.json({ drives });
+  return res.json({
+    drives: companyId === null
+      ? drives
+      : drives.filter(drive => Number(drive.companyId) === Number(companyId))
+  });
 }
 
 async function getDrive(req, res) {
