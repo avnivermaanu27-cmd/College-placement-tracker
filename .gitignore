@@ -1,3 +1,8 @@
 node_modules/
 .env
 npm-debug.log*
+cpp/tracker
+cpp/tests
+tracker
+tests
+*.o
