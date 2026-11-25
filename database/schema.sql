@@ -1,9 +1,3 @@
-CREATE DATABASE IF NOT EXISTS college_placement_tracker
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE college_placement_tracker;
-
 CREATE TABLE IF NOT EXISTS users (
   user_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   email VARCHAR(255) NOT NULL,

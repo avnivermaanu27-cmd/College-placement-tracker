@@ -1,5 +1,3 @@
-USE college_placement_tracker;
-
 -- Development-only seed accounts use the password "password". Change it locally.
 INSERT INTO users (user_id, email, password_hash, role) VALUES
   (1, 'admin@college.test', '$2a$10$hD4XNSTid4tV6jPrnj1VUOjXiODE/cAubwfMZkytPzFIBr4F6I7Xm', 'admin'),
